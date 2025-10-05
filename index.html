@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>My Gallery</title>
+  <meta name="description" content="Instagram-style grid with albums. No dates." />
+  <link rel="preload" href="style.css" as="style" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="site-header" role="banner">
+    <div class="container">
+      <div class="profile">
+        <img class="avatar" src="assets/images/portraits_rooftop/cover.jpg" alt="Profile photo" />
+        <div class="meta">
+          <h1 class="username">your.username</h1>
+          <p class="bio">Short bio here. Photographer and student. Based in NJ.</p>
+        </div>
+      </div>
+      <nav class="site-nav" aria-label="Filters">
+        <a href="#" class="nav-link" data-filter="all" aria-current="page">All</a>
+        <a href="#" class="nav-link" data-filter="portraits">Portraits</a>
+        <a href="#" class="nav-link" data-filter="street">Street</a>
+        <a href="#" class="nav-link" data-filter="editorial">Editorial</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container" id="content" role="main">
+    <section class="grid" id="grid" aria-label="Album grid">
+      <article class="tile" tabindex="0"
+        data-album="Street at Night"
+        data-category="street"
+        data-images='["assets/images/street_night/shot1.jpg","assets/images/street_night/shot2.jpg","assets/images/street_night/shot3.jpg"]'
+        data-cover="assets/images/street_night/cover.jpg">
+        <img
+          src="assets/images/street_night/thumbs/cover.jpg"
+          srcset="assets/images/street_night/thumbs/cover.jpg 640w, assets/images/street_night/cover.jpg 2048w"
+          sizes="(max-width: 600px) 100vw, (max-width: 900px) 50vw, 33vw"
+          alt="Street at Night cover"
+          class="thumb" loading="lazy" />
+        <div class="overlay">
+          <div class="album-title">Street at Night</div>
+          <div class="count">3</div>
+        </div>
+      </article>
+
+      <article class="tile" tabindex="0"
+        data-album="Rooftop Portraits"
+        data-category="portraits"
+        data-images='["assets/images/portraits_rooftop/pose1.jpg","assets/images/portraits_rooftop/pose2.jpg","assets/images/portraits_rooftop/pose3.jpg","assets/images/portraits_rooftop/pose4.jpg"]'
+        data-cover="assets/images/portraits_rooftop/cover.jpg">
+        <img
+          src="assets/images/portraits_rooftop/thumbs/cover.jpg"
+          srcset="assets/images/portraits_rooftop/thumbs/cover.jpg 640w, assets/images/portraits_rooftop/cover.jpg 2048w"
+          sizes="(max-width: 600px) 100vw, (max-width: 900px) 50vw, 33vw"
+          alt="Rooftop Portraits cover"
+          class="thumb" loading="lazy" />
+        <div class="overlay">
+          <div class="album-title">Rooftop Portraits</div>
+          <div class="count">4</div>
+        </div>
+      </article>
+
+      <article class="tile" tabindex="0"
+        data-album="Editorial Red"
+        data-category="editorial"
+        data-images='["assets/images/editorial_red/frame1.jpg","assets/images/editorial_red/frame2.jpg"]'
+        data-cover="assets/images/editorial_red/cover.jpg">
+        <img
+          src="assets/images/editorial_red/thumbs/cover.jpg"
+          srcset="assets/images/editorial_red/thumbs/cover.jpg 640w, assets/images/editorial_red/cover.jpg 2048w"
+          sizes="(max-width: 600px) 100vw, (max-width: 900px) 50vw, 33vw"
+          alt="Editorial Red cover"
+          class="thumb" loading="lazy" />
+        <div class="overlay">
+          <div class="album-title">Editorial Red</div>
+          <div class="count">2</div>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <footer class="site-footer" role="contentinfo">
+    <div class="container">
+      <p>© <span id="year"></span> Your Name</p>
+    </div>
+  </footer>
+
+  <div id="lightbox" class="lightbox" aria-hidden="true" role="dialog" aria-label="Album viewer">
+    <button class="lb-close" id="lbClose" aria-label="Close">×</button>
+    <div class="lb-rail">
+      <button class="lb-prev" id="lbPrev" aria-label="Previous">‹</button>
+      <img id="lbImg" alt="" />
+      <button class="lb-next" id="lbNext" aria-label="Next">›</button>
+    </div>
+    <div class="lb-caption">
+      <div id="lbAlbum"></div>
+      <div id="lbIndex"></div>
+    </div>
+  </div>
+
+  <script src="script.js" defer></script>
+</body>
+</html>
