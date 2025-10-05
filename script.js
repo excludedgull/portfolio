@@ -11,24 +11,53 @@ document.addEventListener('DOMContentLoaded', () => {
   const lbPrev = document.getElementById('lbPrev');
   const lbNext = document.getElementById('lbNext');
   const lbClose = document.getElementById('lbClose');
+  const lbDots = document.getElementById('lbDots');
 
   let albumImages = [];
   let currentIndex = 0;
 
   function openAlbum(tile) {
     albumImages = JSON.parse(tile.getAttribute('data-images') || '[]'); // cover not added
+    buildDots();
     currentIndex = 0;
-    renderCurrent();
+    updateUI();
     lb.classList.add('open');
     lb.setAttribute('aria-hidden', 'false');
   }
 
-  function renderCurrent() {
+  function updateUI() {
     if (!albumImages.length) return;
     const imgPath = albumImages[currentIndex];
     lbImg.setAttribute('src', imgPath);
     lbImg.setAttribute('srcset', `${imgPath} 2048w`);
     lbImg.setAttribute('sizes', '92vw');
+
+    // update arrows disabled state - no infinite loop
+    if (lbPrev) lbPrev.disabled = currentIndex === 0;
+    if (lbNext) lbNext.disabled = currentIndex === albumImages.length - 1;
+
+    // update dots active state
+    if (lbDots) {
+      const dots = Array.from(lbDots.querySelectorAll('.lb-dot'));
+      dots.forEach((d, i) => d.classList.toggle('active', i === currentIndex));
+    }
+  }
+
+  function buildDots() {
+    if (!lbDots) return;
+    lbDots.innerHTML = '';
+    albumImages.forEach((_, i) => {
+      const dot = document.createElement('button');
+      dot.className = 'lb-dot';
+      dot.type = 'button';
+      dot.setAttribute('aria-label', `Go to image ${i + 1}`);
+      dot.addEventListener('click', (e) => {
+        e.stopPropagation();
+        currentIndex = i;
+        updateUI();
+      });
+      lbDots.appendChild(dot);
+    });
   }
 
   function closeLB() {
@@ -39,27 +68,21 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function prev() {
-    if (!albumImages.length) return;
-    currentIndex = (currentIndex - 1 + albumImages.length) % albumImages.length;
-    renderCurrent();
+    if (currentIndex > 0) {
+      currentIndex -= 1;
+      updateUI();
+    }
   }
 
   function next() {
-    if (!albumImages.length) return;
-    currentIndex = (currentIndex + 1) % albumImages.length;
-    renderCurrent();
+    if (currentIndex < albumImages.length - 1) {
+      currentIndex += 1;
+      updateUI();
+    }
   }
 
   // Tile events
   tiles.forEach(tile => {
-    // Auto-set count text from data-images
-    const countEl = tile.querySelector('.overlay .count');
-    if (countEl) {
-      try {
-        const imgs = JSON.parse(tile.getAttribute('data-images') || '[]');
-        countEl.textContent = String(imgs.length);
-      } catch {}
-    }
     tile.addEventListener('click', () => openAlbum(tile));
     tile.addEventListener('keypress', (e) => {
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openAlbum(tile); }
@@ -77,7 +100,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (e.target === lb) closeLB();
     });
   }
-  // Prevent image click from closing
   if (lbImg) lbImg.addEventListener('click', (e) => e.stopPropagation());
 
   // Keyboard
