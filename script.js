@@ -1,9 +1,15 @@
+/* Lightbox and albums */
 document.addEventListener('DOMContentLoaded', () => {
+  // Year in footer
   const yearEl = document.getElementById('year');
   if (yearEl) yearEl.textContent = new Date().getFullYear();
 
   const grid = document.getElementById('grid');
+  if (!grid) return;
+
   const tiles = Array.from(grid.querySelectorAll('.tile'));
+
+  // Lightbox elements
   const lb = document.getElementById('lightbox');
   const lbImg = document.getElementById('lbImg');
   const lbPrev = document.getElementById('lbPrev');
@@ -16,13 +22,10 @@ document.addEventListener('DOMContentLoaded', () => {
   let albumTitle = '';
   let currentIndex = 0;
 
+  // Open album without adding cover to slides
   function openAlbum(tile) {
     albumTitle = tile.getAttribute('data-album') || '';
-    const cover = tile.getAttribute('data-cover');
     albumImages = JSON.parse(tile.getAttribute('data-images') || '[]');
-    if (cover && (!albumImages.length || albumImages[0] !== cover)) {
-      albumImages = [cover, ...albumImages];
-    }
     currentIndex = 0;
     renderCurrent();
     lb.classList.add('open');
@@ -32,10 +35,11 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderCurrent() {
     const imgPath = albumImages[currentIndex];
     lbImg.setAttribute('src', imgPath);
+    // Provide a simple srcset for browsers that want a hint
     lbImg.setAttribute('srcset', `${imgPath} 2048w`);
     lbImg.setAttribute('sizes', '92vw');
-    lbAlbum.textContent = albumTitle;
-    lbIndex.textContent = `${currentIndex + 1} / ${albumImages.length}`;
+    if (lbAlbum) lbAlbum.textContent = albumTitle;
+    if (lbIndex) lbIndex.textContent = `${currentIndex + 1} / ${albumImages.length}`;
   }
 
   function closeLB() {
@@ -55,16 +59,27 @@ document.addEventListener('DOMContentLoaded', () => {
     renderCurrent();
   }
 
+  // Tile clicks and keyboard
   tiles.forEach(tile => {
+    // Auto set the visible count from data-images
+    const countEl = tile.querySelector('.overlay .count');
+    if (countEl) {
+      try {
+        const imgs = JSON.parse(tile.getAttribute('data-images') || '[]');
+        countEl.textContent = String(imgs.length);
+      } catch {}
+    }
+
     tile.addEventListener('click', () => openAlbum(tile));
     tile.addEventListener('keypress', (e) => {
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openAlbum(tile); }
     });
   });
 
-  lbPrev.addEventListener('click', prev);
-  lbNext.addEventListener('click', next);
-  lbClose.addEventListener('click', closeLB);
+  // Lightbox controls
+  if (lbPrev) lbPrev.addEventListener('click', prev);
+  if (lbNext) lbNext.addEventListener('click', next);
+  if (lbClose) lbClose.addEventListener('click', closeLB);
 
   document.addEventListener('keydown', (e) => {
     if (!lb.classList.contains('open')) return;
@@ -72,20 +87,4 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.key === 'ArrowLeft') prev();
     if (e.key === 'ArrowRight') next();
   });
-
-  const nav = document.querySelector('.site-nav');
-  if (nav) {
-    nav.addEventListener('click', (e) => {
-      const link = e.target.closest('.nav-link');
-      if (!link) return;
-      e.preventDefault();
-      document.querySelectorAll('.nav-link').forEach(l => l.removeAttribute('aria-current'));
-      link.setAttribute('aria-current', 'page');
-      const filter = link.getAttribute('data-filter');
-      tiles.forEach(t => {
-        const cat = t.getAttribute('data-category') || 'all';
-        t.style.display = (filter === 'all' || cat === filter) ? '' : 'none';
-      });
-    });
-  }
 });
