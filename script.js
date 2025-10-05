@@ -1,4 +1,22 @@
+// Disable double-tap zoom but keep pinch-zoom
+(function () {
+  let lastTouchEnd = 0;
+  document.addEventListener('touchend', function (e) {
+    const now = Date.now();
+    if (now - lastTouchEnd <= 300) {
+      e.preventDefault(); // block second tap zoom
+    }
+    lastTouchEnd = now;
+  }, { passive: false });
+
+  // Some browsers also zoom on dblclick
+  document.addEventListener('dblclick', function (e) {
+    e.preventDefault();
+  }, { passive: false });
+})();
+
 document.addEventListener('DOMContentLoaded', () => {
+  // Year in footer
   const yearEl = document.getElementById('year');
   if (yearEl) yearEl.textContent = new Date().getFullYear();
 
@@ -11,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const lbPrev = document.getElementById('lbPrev');
   const lbNext = document.getElementById('lbNext');
   const lbClose = document.getElementById('lbClose');
-  const lbDots = document.getElementById('lbDots');
+  const lbDots = document.getElementById('lbDots'); // make sure this exists in index.html
 
   let albumImages = [];
   let currentIndex = 0;
@@ -32,11 +50,11 @@ document.addEventListener('DOMContentLoaded', () => {
     lbImg.setAttribute('srcset', `${imgPath} 2048w`);
     lbImg.setAttribute('sizes', '92vw');
 
-    // update arrows disabled state - no infinite loop
+    // Disable arrows at ends (no infinite loop)
     if (lbPrev) lbPrev.disabled = currentIndex === 0;
     if (lbNext) lbNext.disabled = currentIndex === albumImages.length - 1;
 
-    // update dots active state
+    // Update dots
     if (lbDots) {
       const dots = Array.from(lbDots.querySelectorAll('.lb-dot'));
       dots.forEach((d, i) => d.classList.toggle('active', i === currentIndex));
