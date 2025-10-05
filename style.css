@@ -89,12 +89,14 @@ body {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center center; /* default centering */
   display: block;
   transform: none;
   transition: none;
+  background-color: #000;
 }
 
-/* Remove hover overlays completely */
+/* No hover overlays/captions on tiles */
 .tile:hover .thumb { transform: none; }
 .tile .overlay { display: none !important; }
 
@@ -116,7 +118,6 @@ body {
   place-items: center;
   padding: 20px;
 }
-
 .lightbox.open { display: grid; }
 
 .lb-rail {
@@ -163,7 +164,7 @@ body {
 .lb-prev { left: 16px; }
 .lb-next { right: 16px; }
 
-/* Hide captions inside lightbox if present */
+/* Hide lightbox caption (album/index) if present */
 #lightbox .lb-caption { display: none !important; }
 
 /* Lightbox dots */
@@ -197,9 +198,16 @@ body {
   background: rgba(255,255,255,0.95);
 }
 
+/* Disabled arrows when at ends */
 .lb-prev[disabled],
 .lb-next[disabled] {
   opacity: 0.35;
   cursor: default;
   pointer-events: none;
+}
+
+/* Better mobile tap behavior (keeps pinch zoom) */
+html, body { touch-action: manipulation; }
+button, a, .tile, .lb-prev, .lb-next, .lb-close, .lb-dot {
+  touch-action: manipulation;
 }
