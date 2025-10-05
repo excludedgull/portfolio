@@ -95,12 +95,8 @@ body {
 }
 
 /* Remove hover overlays completely */
-.tile:hover .thumb {
-  transform: none;
-}
-.tile .overlay {
-  display: none !important;
-}
+.tile:hover .thumb { transform: none; }
+.tile .overlay { display: none !important; }
 
 /* Footer */
 .site-footer {
@@ -139,6 +135,7 @@ body {
   background: #000;
 }
 
+/* Controls */
 .lb-close,
 .lb-prev,
 .lb-next {
@@ -154,8 +151,8 @@ body {
   cursor: pointer;
   display: grid;
   place-items: center;
-  z-index: 1000;
-  pointer-events: auto;
+  z-index: 1000;          /* ensure full click area */
+  pointer-events: auto;   /* ensure clicks register */
 }
 
 .lb-close { right: 16px; }
@@ -166,7 +163,38 @@ body {
 .lb-prev { left: 16px; }
 .lb-next { right: 16px; }
 
-/* Hide captions inside lightbox */
-#lightbox .lb-caption {
-  display: none !important;
+/* Hide captions inside lightbox if present */
+#lightbox .lb-caption { display: none !important; }
+
+/* Lightbox dots */
+.lb-dots {
+  position: absolute;
+  bottom: 18px;
+  left: 0;
+  right: 0;
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  pointer-events: auto;
+}
+
+.lb-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 0;
+  background: rgba(255,255,255,0.35);
+  cursor: pointer;
+}
+
+.lb-dot.active {
+  background: rgba(255,255,255,0.95);
+}
+
+/* Disabled arrows when at ends */
+.lb-prev[disabled],
+.lb-next[disabled] {
+  opacity: 0.35;
+  cursor: default;
+  pointer-events: none;
 }
