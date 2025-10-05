@@ -154,6 +154,8 @@ body {
   cursor: pointer;
   display: grid;
   place-items: center;
+  z-index: 1000;
+  pointer-events: auto;
 }
 
 .lb-close { right: 16px; }
