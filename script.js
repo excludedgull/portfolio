@@ -1,6 +1,6 @@
 // -------------------------------
 //  Portfolio Lightbox / Grid JS
-//  Cleaned & organized version
+//  IG-style vertical nav (newest -> oldest)
 // -------------------------------
 
 // 1) GLOBAL GESTURE GUARDS (keep pinch-zoom, block double-tap zoom)
@@ -18,14 +18,14 @@
 const SWIPE = {
   H_THRESHOLD: 40,   // px horizontal to switch photos
   V_THRESHOLD: 140,  // px vertical to switch albums
-  V_SLOPE: 2         // vertical must be 2x stronger than horizontal
+  V_SLOPE: 2
 };
-const REVEAL_CHUNK = 9;            // how many tiles to show per batch
-const IO_ROOT_MARGIN = '400px 0px'; // infinite reveal sensitivity
+const REVEAL_CHUNK = 9;
+const IO_ROOT_MARGIN = '400px 0px';
 
 // 3) STATE
 const state = {
-  tiles: [],
+  tiles: [],              // DOM order: newest -> oldest
   openerTile: null,
   albumImages: [],
   currentIndex: 0,
@@ -36,21 +36,21 @@ const state = {
   cachedCols: 3
 };
 
-// 4) DOM REFS (lazy-safe)
+// 4) DOM REFS
 const refs = {};
 function $$initRefs() {
-  refs.year    = document.getElementById('year');
-  refs.grid    = document.getElementById('grid');
-  refs.lb      = document.getElementById('lightbox');
-  refs.lbImg   = document.getElementById('lbImg');
-  refs.lbPrev  = document.getElementById('lbPrev');
-  refs.lbNext  = document.getElementById('lbNext');
-  refs.lbClose = document.getElementById('lbClose');
-  refs.lbDots  = document.getElementById('lbDots');
-  refs.sentinel= document.getElementById('sentinel');
+  refs.year     = document.getElementById('year');
+  refs.grid     = document.getElementById('grid');
+  refs.lb       = document.getElementById('lightbox');
+  refs.lbImg    = document.getElementById('lbImg');
+  refs.lbPrev   = document.getElementById('lbPrev');
+  refs.lbNext   = document.getElementById('lbNext');
+  refs.lbClose  = document.getElementById('lbClose');
+  refs.lbDots   = document.getElementById('lbDots');
+  refs.sentinel = document.getElementById('sentinel');
 }
 
-// 5) UTIL: SCROLL LOCK (also stops pull-to-refresh)
+// 5) UTIL: SCROLL LOCK
 const preventTouchMove = (e) => { e.preventDefault(); };
 function lockScroll() {
   document.documentElement.classList.add('no-scroll');
@@ -63,13 +63,12 @@ function unlockScroll() {
   document.removeEventListener('touchmove', preventTouchMove, { passive: false });
 }
 
-// 6) UTIL: GRID ORDER / COLUMNS
+// 6) UTIL: VISUAL GRID INFO (used elsewhere)
 function visibleTiles() {
   return state.tiles.filter(t => t.offsetParent !== null);
 }
 function computeVisualTiles() {
   const arr = visibleTiles().slice();
-  // Sort top→bottom, then left→right; ignore tiny float differences
   arr.sort((a, b) => {
     const ra = a.getBoundingClientRect();
     const rb = b.getBoundingClientRect();
@@ -101,6 +100,7 @@ function buildDots() {
     refs.lbDots.appendChild(dot);
   });
 }
+
 function setHash() {
   const params = new URLSearchParams();
   const album = state.openerTile?.dataset?.album || state.openerTile?.getAttribute('data-album') || '';
@@ -108,6 +108,7 @@ function setHash() {
   params.set('index', String(state.currentIndex));
   history.replaceState(null, '', '#' + params.toString());
 }
+
 function parseHashAndOpenIfAny() {
   if (!location.hash) return;
   const params = new URLSearchParams(location.hash.slice(1));
@@ -121,24 +122,24 @@ function parseHashAndOpenIfAny() {
   let idx = Number(idxStr);
   if (!Number.isFinite(idx) || idx < 0) idx = 0;
 
-  // peek images to clamp safely
   let imgs = [];
   try { imgs = JSON.parse(tile.getAttribute('data-images') || '[]'); } catch {}
   idx = Math.min(idx, Math.max(0, imgs.length - 1));
 
   openAlbum(tile, idx, false);
 }
+
 function preloadNeighbor(i) {
   const path = state.albumImages[i];
   if (!path) return;
   const img = new Image();
   img.src = path;
 }
+
 function updateUI() {
   if (!state.albumImages.length) return;
   const imgPath = state.albumImages[state.currentIndex];
 
-  // Fade/blur while loading
   refs.lbImg.classList.add('loading');
   refs.lbImg.onerror = () => {
     refs.lbImg.removeAttribute('srcset');
@@ -146,7 +147,6 @@ function updateUI() {
     refs.lbImg.classList.remove('portrait', 'loading');
   };
 
-  // do not set fake srcset/sizes
   refs.lbImg.removeAttribute('srcset');
   refs.lbImg.removeAttribute('sizes');
   refs.lbImg.setAttribute('src', imgPath);
@@ -160,15 +160,14 @@ function updateUI() {
   if (refs.lbImg.complete) onLoaded();
   else refs.lbImg.addEventListener('load', onLoaded, { once: true });
 
-  // Update controls
   if (refs.lbPrev) refs.lbPrev.disabled = state.currentIndex === 0;
   if (refs.lbNext) refs.lbNext.disabled = state.currentIndex === state.albumImages.length - 1;
+
   if (refs.lbDots) {
     const dots = Array.from(refs.lbDots.querySelectorAll('.lb-dot'));
     dots.forEach((d, i) => d.classList.toggle('active', i === state.currentIndex));
   }
 
-  // Preload neighbors
   preloadNeighbor(state.currentIndex + 1);
   preloadNeighbor(state.currentIndex - 1);
 
@@ -184,19 +183,21 @@ function goTo(i) {
 const prevPhoto = () => { if (state.currentIndex > 0) goTo(state.currentIndex - 1); };
 const nextPhoto = () => { if (state.currentIndex < state.albumImages.length - 1) goTo(state.currentIndex + 1); };
 
-function openAdjacentRow(direction /* -1 up, +1 down */) {
+// IG-style vertical album navigation using DOM order (newest -> oldest)
+function openAlbumNewer() { // move toward more recent
   if (!state.openerTile) return;
-  if (!state.cachedVisualTiles) computeVisualTiles();
-  const vt = state.cachedVisualTiles;
-  const idx = vt.indexOf(state.openerTile);
-  if (idx < 0) return;
-  const cols = state.cachedCols || 3;
-  const target = vt[idx + direction * cols];
-  if (!target) return;
-  openAlbum(target, 0);
+  const linear = state.tiles; // newest -> oldest
+  const idx = linear.indexOf(state.openerTile);
+  if (idx <= 0) return; // already at most recent
+  openAlbum(linear[idx - 1], 0);
 }
-const openAlbumAbove = () => openAdjacentRow(-1); // previous/newer (visually above)
-const openAlbumBelow = () => openAdjacentRow(+1); // next/older    (visually below)
+function openAlbumOlder() { // move toward older
+  if (!state.openerTile) return;
+  const linear = state.tiles; // newest -> oldest
+  const idx = linear.indexOf(state.openerTile);
+  if (idx < 0 || idx >= linear.length - 1) return; // already at oldest
+  openAlbum(linear[idx + 1], 0);
+}
 
 function openAlbum(tile, startIndex = 0, focusTrap = true) {
   state.openerTile = tile;
@@ -221,7 +222,6 @@ function closeLB() {
   refs.lbImg.removeAttribute('src');
   refs.lbImg.removeAttribute('srcset');
   unlockScroll();
-  // clear only the hash, keep path and search intact
   history.replaceState(null, '', location.pathname + location.search);
   state.openerTile?.focus?.();
   state.openerTile = null;
@@ -231,10 +231,9 @@ function closeLB() {
 document.addEventListener('DOMContentLoaded', () => {
   $$initRefs();
 
-  // Footer year
   if (refs.year) refs.year.textContent = new Date().getFullYear();
 
-  // Tiles
+  // Capture tiles in DOM order — newest -> oldest
   state.tiles = refs.grid ? Array.from(refs.grid.querySelectorAll('.tile')) : [];
 
   // Blur-up for grid thumbs
@@ -243,7 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
     else img.addEventListener('load', () => img.classList.remove('loading'), { once: true });
   });
 
-  // Compute order/cols initially and on resize/orientation
+  // Visual info (still useful for other layout bits)
   computeVisualTiles();
   getCols();
   window.addEventListener('resize', () => { computeVisualTiles(); getCols(); });
@@ -277,10 +276,8 @@ document.addEventListener('DOMContentLoaded', () => {
     refs.lb.addEventListener('touchmove', (e) => {
       if (!state.swiping || e.touches?.length !== 1) return;
       const dx = e.touches[0].clientX - state.touchStartX;
-      // directional preload during gesture
       if (dx < -20) preloadNeighbor(state.currentIndex + 1);
       if (dx >  20) preloadNeighbor(state.currentIndex - 1);
-      // block vertical page scroll / pull-to-refresh
       e.preventDefault();
     }, { passive: false });
 
@@ -300,17 +297,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if (dx < 0) nextPhoto(); else prevPhoto();
         return;
       }
-      // Vertical: DOWN = album below (next/older), UP = album above (previous/newer)
+      // Vertical (IG-style):
+      // swipe DOWN -> older post, swipe UP -> newer post
       if (absY > SWIPE.V_THRESHOLD && absY > absX * SWIPE.V_SLOPE) {
-        computeVisualTiles(); // ensure up-to-date after reveals/resize
-        getCols();
-        if (dy > 0) openAlbumBelow();  // swipe down
-        else       openAlbumAbove();   // swipe up
+        if (dy > 0) openAlbumOlder();  // down = next older
+        else       openAlbumNewer();   // up   = previous newer
       }
     }, { passive: true });
   }
 
-  // Keyboard (keep intuitive with swipes: Up=above/previous, Down=below/next)
+  // Keyboard mirrors swipe logic
   document.addEventListener('keydown', (e) => {
     if (!refs.lb.classList.contains('open')) {
       if ((e.key === 'Enter' || e.key === ' ') && document.activeElement?.classList?.contains('tile')) {
@@ -320,17 +316,15 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    // stop page scroll on arrow keys while lightbox is open
     const arrowKeys = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
     if (arrowKeys.includes(e.key)) e.preventDefault();
 
     if (e.key === 'Escape') closeLB();
     if (e.key === 'ArrowLeft') prevPhoto();
     if (e.key === 'ArrowRight') nextPhoto();
-    if (e.key === 'ArrowUp') openAlbumAbove();
-    if (e.key === 'ArrowDown') openAlbumBelow();
+    if (e.key === 'ArrowUp') openAlbumNewer();  // newer
+    if (e.key === 'ArrowDown') openAlbumOlder(); // older
 
-    // Focus trap (lightweight)
     if (e.key === 'Tab') {
       const focusables = [refs.lbPrev, refs.lbNext, refs.lbClose, refs.lbImg].filter(Boolean);
       const first = focusables[0], last = focusables[focusables.length - 1];
@@ -340,19 +334,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Infinite reveal (no filenames shown)
+  // Infinite reveal
   const allTiles = Array.from(document.querySelectorAll('.grid .tile'));
   let shown = 0;
   function hideBeyondInitial() {
     shown = Math.min(REVEAL_CHUNK, allTiles.length);
     allTiles.forEach((t, i) => { t.style.display = i < shown ? '' : 'none'; });
-    computeVisualTiles(); // keep visual order fresh
+    computeVisualTiles();
   }
   function revealMore() {
     const nextShown = Math.min(shown + REVEAL_CHUNK, allTiles.length);
     for (let i = shown; i < nextShown; i++) allTiles[i].style.display = '';
     shown = nextShown;
-    computeVisualTiles(); // update after reveal
+    computeVisualTiles();
   }
   hideBeyondInitial();
   if (refs.sentinel && 'IntersectionObserver' in window) {
