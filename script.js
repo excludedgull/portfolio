@@ -177,20 +177,45 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   if (lbImg) lbImg.addEventListener('click', (e) => e.stopPropagation());
 
-  // Swipe gestures
-  if (lb) {
-    lb.addEventListener('touchstart', (e) => {
-      if (!e.touches || e.touches.length !== 1) return;
-      swiping = true;
-      touchStartX = e.touches[0].clientX;
-      touchStartY = e.touches[0].clientY;
-    }, { passive: true });
+  // Swipe gestures (tuned for fewer accidental vertical triggers)
+if (lb) {
+  lb.addEventListener('touchstart', (e) => {
+    if (!e.touches || e.touches.length !== 1) return;
+    swiping = true;
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+  }, { passive: true });
 
-    lb.addEventListener('touchmove', (e) => {
-      if (!swiping || !e.touches || e.touches.length !== 1) return;
-      // prevent background scroll while swiping
-      e.preventDefault();
-    }, { passive: false });
+  lb.addEventListener('touchmove', (e) => {
+    if (!swiping || !e.touches || e.touches.length !== 1) return;
+    // Prevent background scroll while swiping horizontally
+    e.preventDefault();
+  }, { passive: false });
+
+  lb.addEventListener('touchend', (e) => {
+    if (!swiping) return;
+    swiping = false;
+    const touch = e.changedTouches && e.changedTouches[0];
+    if (!touch) return;
+    const dx = touch.clientX - touchStartX;
+    const dy = touch.clientY - touchStartY;
+    const absX = Math.abs(dx);
+    const absY = Math.abs(dy);
+
+    // Horizontal swipe (photo-to-photo) stays the same
+    if (absX > 40 && absX > absY) {
+      if (dx < 0) next(); else prev();
+      return;
+    }
+
+    // Vertical swipe (album-to-album) now requires stronger motion
+    // Minimum 120px distance and at least 1.8× stronger than horizontal
+    if (absY > 120 && absY > absX * 1.8) {
+      if (dy < 0) openNextAlbum();   // swipe up → next album
+      else openPrevAlbum();          // swipe down → previous album
+    }
+  }, { passive: true });
+}
 
     lb.addEventListener('touchend', (e) => {
       if (!swiping) return;
