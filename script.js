@@ -28,8 +28,15 @@ document.addEventListener('DOMContentLoaded', () => {
   let openerTile = null;
   let touchStartX = 0, touchStartY = 0, swiping = false;
 
-  const lockScroll = () => { document.documentElement.style.overflow = 'hidden'; };
-  const unlockScroll = () => { document.documentElement.style.overflow = ''; };
+  // --- Scroll lock: use class so CSS can fully freeze background on mobile ---
+  const lockScroll = () => {
+    document.documentElement.classList.add('no-scroll');
+    document.body.classList.add('no-scroll');
+  };
+  const unlockScroll = () => {
+    document.documentElement.classList.remove('no-scroll');
+    document.body.classList.remove('no-scroll');
+  };
 
   const albumTitleOf = (tile) => tile?.getAttribute('data-album') || '';
   const tileIndex = (tile) => tiles.indexOf(tile);
@@ -76,6 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function updateUI() {
     if (!albumImages.length) return;
     const imgPath = albumImages[currentIndex];
+
     lbImg.onerror = () => {
       lbImg.removeAttribute('srcset');
       lbImg.alt = 'Image failed to load.';
@@ -85,8 +93,8 @@ document.addEventListener('DOMContentLoaded', () => {
     lbImg.setAttribute('sizes', '92vw');
     lbImg.alt = '';
 
-    if (lbPrev) lbPrev.disabled = currentIndex === 0;
-    if (lbNext) lbNext.disabled = currentIndex === albumImages.length - 1;
+    lbPrev && (lbPrev.disabled = currentIndex === 0);
+    lbNext && (lbNext.disabled = currentIndex === albumImages.length - 1);
 
     if (lbDots) {
       const dots = Array.from(lbDots.querySelectorAll('.lb-dot'));
@@ -104,9 +112,10 @@ document.addEventListener('DOMContentLoaded', () => {
     updateUI();
   }
 
-  function prev() { if (currentIndex > 0) goTo(currentIndex - 1); }
-  function next() { if (currentIndex < albumImages.length - 1) goTo(currentIndex + 1); }
+  const prev = () => { if (currentIndex > 0) goTo(currentIndex - 1); };
+  const next = () => { if (currentIndex < albumImages.length - 1) goTo(currentIndex + 1); };
 
+  // Album-to-album navigation
   function openAdjacentAlbum(offset) {
     if (!openerTile) return;
     const idx = tileIndex(openerTile);
@@ -115,7 +124,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!target) return;
     openAlbum(target, 0);
   }
-
   const openPrevAlbum = () => openAdjacentAlbum(-1);
   const openNextAlbum = () => openAdjacentAlbum(+1);
 
@@ -143,7 +151,7 @@ document.addEventListener('DOMContentLoaded', () => {
     openerTile = null;
   }
 
-  // Tile click
+  // Tile events
   tiles.forEach(tile => {
     tile.setAttribute('tabindex', '0');
     tile.addEventListener('click', () => openAlbum(tile));
@@ -160,7 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
   lb?.addEventListener('click', (e) => { if (e.target === lb) closeLB(); });
   lbImg?.addEventListener('click', (e) => e.stopPropagation());
 
-  // --- Swipe gestures (fixed: fewer false triggers + desktop-safe) ---
+  // Swipe gestures (reduced false vertical triggers + desktop-safe)
   if (lb) {
     lb.addEventListener('touchstart', (e) => {
       if (e.touches?.length !== 1) return;
@@ -187,13 +195,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const absX = Math.abs(dx);
       const absY = Math.abs(dy);
 
-      // Horizontal swipe
+      // Horizontal: photo-to-photo
       if (absX > 40 && absX > absY) {
         if (dx < 0) next(); else prev();
         return;
       }
-
-      // Vertical swipe (album navigation) — stricter requirement
+      // Vertical: album-to-album — stricter threshold
       if (absY > 140 && absY > absX * 2) {
         if (dy < 0) openNextAlbum();
         else openPrevAlbum();
@@ -201,7 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }, { passive: true });
   }
 
-  // Keyboard controls
+  // Keyboard
   document.addEventListener('keydown', (e) => {
     if (!lb.classList.contains('open')) {
       if ((e.key === 'Enter' || e.key === ' ') && document.activeElement?.classList?.contains('tile')) {
@@ -210,14 +217,13 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       return;
     }
-
     if (e.key === 'Escape') closeLB();
     if (e.key === 'ArrowLeft') prev();
     if (e.key === 'ArrowRight') next();
     if (e.key === 'ArrowUp') openNextAlbum();
     if (e.key === 'ArrowDown') openPrevAlbum();
 
-    // Focus trap inside lightbox
+    // Focus trap
     if (e.key === 'Tab') {
       const focusables = [lbPrev, lbNext, lbClose, lbImg].filter(Boolean);
       const first = focusables[0], last = focusables[focusables.length - 1];
