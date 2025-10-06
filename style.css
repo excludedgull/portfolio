@@ -199,7 +199,15 @@ button, a, .tile, .lb-prev, .lb-next, .lb-close, .lb-dot {
   touch-action: manipulation;
 }
 
-/* Bro Grad Fit mobile adjustment */
+/* Freeze background when lightbox is open (mobile & desktop) */
+body.no-scroll,
+html.no-scroll {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+}
+
+/* Bro Grad Fit mobile adjustment (only that one image) */
 @media (max-width: 768px) {
   .lb-rail img[src*="bro-grad-fit/1.jpg"] {
     width: 100%;
