@@ -22,24 +22,34 @@ document.addEventListener('DOMContentLoaded', () => {
   const lbNext = document.getElementById('lbNext');
   const lbClose = document.getElementById('lbClose');
   const lbDots = document.getElementById('lbDots');
+  const sentinel = document.getElementById('sentinel');
 
   let albumImages = [];
   let currentIndex = 0;
   let openerTile = null;
   let touchStartX = 0, touchStartY = 0, swiping = false;
 
-  // --- Scroll lock: use class so CSS can fully freeze background on mobile ---
+  // Strong scroll lock to block vertical page scroll & pull-to-refresh
+  const preventTouchMove = (e) => { e.preventDefault(); };
   const lockScroll = () => {
     document.documentElement.classList.add('no-scroll');
     document.body.classList.add('no-scroll');
+    document.addEventListener('touchmove', preventTouchMove, { passive: false });
   };
   const unlockScroll = () => {
     document.documentElement.classList.remove('no-scroll');
     document.body.classList.remove('no-scroll');
+    document.removeEventListener('touchmove', preventTouchMove, { passive: false });
   };
 
   const albumTitleOf = (tile) => tile?.getAttribute('data-album') || '';
   const tileIndex = (tile) => tiles.indexOf(tile);
+
+  // ---- Blur-up thumbs: remove loading blur when cover imgs load ----
+  document.querySelectorAll('.thumb.loading').forEach(img => {
+    if (img.complete) img.classList.remove('loading');
+    else img.addEventListener('load', () => img.classList.remove('loading'), { once: true });
+  });
 
   function buildDots() {
     if (!lbDots) return;
@@ -84,25 +94,43 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!albumImages.length) return;
     const imgPath = albumImages[currentIndex];
 
+    // Lightbox fade/blur-in
+    lbImg.classList.add('loading');
     lbImg.onerror = () => {
       lbImg.removeAttribute('srcset');
       lbImg.alt = 'Image failed to load.';
+      lbImg.classList.remove('portrait');
+      lbImg.classList.remove('loading');
     };
     lbImg.setAttribute('src', imgPath);
     lbImg.setAttribute('srcset', `${imgPath} 2048w`);
     lbImg.setAttribute('sizes', '92vw');
     lbImg.alt = '';
 
-    lbPrev && (lbPrev.disabled = currentIndex === 0);
-    lbNext && (lbNext.disabled = currentIndex === albumImages.length - 1);
+    // Decide portrait vs landscape after load (no flicker)
+    const onLoaded = () => {
+      // remove blur/fade
+      lbImg.classList.remove('loading');
+      // orientation
+      const isPortrait = (lbImg.naturalHeight || 0) > (lbImg.naturalWidth || 0);
+      lbImg.classList.toggle('portrait', isPortrait);
+    };
+    if (lbImg.complete) onLoaded();
+    else lbImg.addEventListener('load', onLoaded, { once: true });
+
+    // Arrows and dots
+    if (lbPrev) lbPrev.disabled = currentIndex === 0;
+    if (lbNext) lbNext.disabled = currentIndex === albumImages.length - 1;
 
     if (lbDots) {
       const dots = Array.from(lbDots.querySelectorAll('.lb-dot'));
       dots.forEach((d, i) => d.classList.toggle('active', i === currentIndex));
     }
 
+    // Smarter preloading: always neighbor; boost based on swipe direction hints
     preloadNeighbor(currentIndex + 1);
     preloadNeighbor(currentIndex - 1);
+
     setHash();
   }
 
@@ -115,7 +143,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const prev = () => { if (currentIndex > 0) goTo(currentIndex - 1); };
   const next = () => { if (currentIndex < albumImages.length - 1) goTo(currentIndex + 1); };
 
-  // Album-to-album navigation
   function openAdjacentAlbum(offset) {
     if (!openerTile) return;
     const idx = tileIndex(openerTile);
@@ -124,8 +151,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!target) return;
     openAlbum(target, 0);
   }
-  const openPrevAlbum = () => openAdjacentAlbum(-1);
-  const openNextAlbum = () => openAdjacentAlbum(+1);
+  const openPrevAlbum = () => openAdjacentAlbum(-1); // previous album (up)
+  const openNextAlbum = () => openAdjacentAlbum(+1); // next album (down)
 
   function openAlbum(tile, startIndex = 0, focusTrap = true) {
     openerTile = tile;
@@ -164,11 +191,10 @@ document.addEventListener('DOMContentLoaded', () => {
   lbPrev?.addEventListener('click', (e) => { e.stopPropagation(); prev(); });
   lbNext?.addEventListener('click', (e) => { e.stopPropagation(); next(); });
   lbClose?.addEventListener('click', (e) => { e.stopPropagation(); closeLB(); });
-
   lb?.addEventListener('click', (e) => { if (e.target === lb) closeLB(); });
   lbImg?.addEventListener('click', (e) => e.stopPropagation());
 
-  // Swipe gestures (reduced false vertical triggers + desktop-safe)
+  // Swipe gestures — block default to stop bounce/pull-to-refresh
   if (lb) {
     lb.addEventListener('touchstart', (e) => {
       if (e.touches?.length !== 1) return;
@@ -181,8 +207,12 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!swiping || e.touches?.length !== 1) return;
       const dx = e.touches[0].clientX - touchStartX;
       const dy = e.touches[0].clientY - touchStartY;
-      // Only block scroll when horizontal gesture dominates
-      if (Math.abs(dx) > Math.abs(dy)) e.preventDefault();
+
+      // preload directionally during gesture
+      if (dx < -20) preloadNeighbor(currentIndex + 1);
+      if (dx > 20)  preloadNeighbor(currentIndex - 1);
+
+      e.preventDefault(); // block vertical page scroll / refresh
     }, { passive: false });
 
     lb.addEventListener('touchend', (e) => {
@@ -200,15 +230,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (dx < 0) next(); else prev();
         return;
       }
-      // Vertical: album-to-album — stricter threshold
+      // Vertical: album-to-album (Up = previous, Down = next)
       if (absY > 140 && absY > absX * 2) {
-        if (dy < 0) openNextAlbum();
-        else openPrevAlbum();
+        if (dy < 0) openPrevAlbum();  // swipe up -> previous album
+        else openNextAlbum();         // swipe down -> next album
       }
     }, { passive: true });
   }
 
-  // Keyboard
+  // Keyboard — Up = previous album, Down = next album
   document.addEventListener('keydown', (e) => {
     if (!lb.classList.contains('open')) {
       if ((e.key === 'Enter' || e.key === ' ') && document.activeElement?.classList?.contains('tile')) {
@@ -220,8 +250,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.key === 'Escape') closeLB();
     if (e.key === 'ArrowLeft') prev();
     if (e.key === 'ArrowRight') next();
-    if (e.key === 'ArrowUp') openNextAlbum();
-    if (e.key === 'ArrowDown') openPrevAlbum();
+    if (e.key === 'ArrowUp') openPrevAlbum();
+    if (e.key === 'ArrowDown') openNextAlbum();
 
     // Focus trap
     if (e.key === 'Tab') {
@@ -233,6 +263,36 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // -------- Infinite reveal for many albums --------
+  // Show first 9, reveal more in chunks as you scroll
+  const CHUNK = 9;
+  const allTiles = Array.from(document.querySelectorAll('.grid .tile'));
+  let shown = 0;
+  function hideBeyondInitial() {
+    shown = Math.min(CHUNK, allTiles.length);
+    allTiles.forEach((t, i) => t.classList.toggle('hidden', i >= shown));
+  }
+  function revealMore() {
+    const nextShown = Math.min(shown + CHUNK, allTiles.length);
+    for (let i = shown; i < nextShown; i++) {
+      allTiles[i].classList.remove('hidden');
+    }
+    shown = nextShown;
+  }
+  hideBeyondInitial();
+  if (sentinel) {
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        if (e.isIntersecting) {
+          revealMore();
+          if (shown >= allTiles.length) io.disconnect();
+        }
+      }
+    }, { rootMargin: '400px 0px' });
+    io.observe(sentinel);
+  }
+
+  // hash deep link support
   window.addEventListener('hashchange', parseHashAndOpenIfAny);
   parseHashAndOpenIfAny();
 });
