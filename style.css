@@ -18,6 +18,7 @@
   }
 }
 
+/* Reset & base */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; }
 body {
@@ -25,7 +26,8 @@ body {
   color: var(--text);
   font: 16px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, Apple Color Emoji, Segoe UI Emoji;
   line-height: 1.6;
-  overscroll-behavior: none; /* Disable pull-to-refresh */
+  overscroll-behavior: none; /* reduce pull-to-refresh */
+  image-orientation: from-image; /* respect EXIF rotation */
 }
 
 /* Layout */
@@ -42,17 +44,10 @@ body {
   text-align: center;
 }
 
-.username {
-  font-size: 20px;
-  margin-bottom: 4px;
-}
+.username { font-size: 20px; margin-bottom: 4px; }
+.bio { color: var(--muted); font-size: 15px; }
 
-.bio {
-  color: var(--muted);
-  font-size: 15px;
-}
-
-/* Grid - always 3 columns, even on mobile */
+/* Grid - always 3 columns */
 .grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -60,7 +55,6 @@ body {
   margin: 14px 0 40px;
 }
 
-/* Tile styling */
 .tile {
   position: relative;
   background: var(--card);
@@ -70,6 +64,7 @@ body {
   border: 1px solid var(--border);
 }
 
+/* Blur-up thumbs */
 .tile .thumb {
   width: 100%;
   height: 100%;
@@ -77,9 +72,15 @@ body {
   object-position: center center;
   display: block;
   background-color: #000;
+  transition: filter .25s ease, transform .25s ease, opacity .25s ease;
+}
+.tile .thumb.loading {
+  filter: blur(8px);
+  transform: scale(1.02);
+  opacity: .6;
 }
 
-/* Disable hover overlays */
+/* No hover overlays/captions */
 .tile:hover .thumb { transform: none; }
 .tile .overlay { display: none !important; }
 
@@ -96,12 +97,17 @@ body {
 .lightbox {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.9);
+  /* gradient + blur for subtle depth */
+  background:
+    radial-gradient(1200px 800px at 50% 30%, rgba(255,255,255,0.06), transparent 60%),
+    rgba(0,0,0,0.88);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   display: none;
   place-items: center;
   padding: 20px;
-  overscroll-behavior: none; /* Disable pull-to-refresh inside */
-  touch-action: none; /* Disable accidental scroll */
+  overscroll-behavior: none; /* stop browser pull-to-refresh inside */
+  touch-action: none;        /* JS handles gestures */
 }
 .lightbox.open { display: grid; }
 
@@ -113,13 +119,19 @@ body {
   place-items: center;
 }
 
+/* Lightbox image fade + bounds */
 .lightbox img {
   max-width: min(92vw, 1400px);
   max-height: 86vh;
   border-radius: 10px;
   box-shadow: var(--shadow);
   background: #000;
-  object-fit: contain;
+  transition: opacity .25s ease, filter .25s ease;
+  opacity: 1;
+}
+.lightbox img.loading {
+  opacity: .2;
+  filter: blur(6px);
 }
 
 /* Controls */
@@ -141,12 +153,8 @@ body {
   z-index: 1000;
   pointer-events: auto;
 }
-
 .lb-close { right: 16px; }
-.lb-prev, .lb-next {
-  top: 50%;
-  transform: translateY(-50%);
-}
+.lb-prev, .lb-next { top: 50%; transform: translateY(-50%); }
 .lb-prev { left: 16px; }
 .lb-next { right: 16px; }
 
@@ -172,7 +180,6 @@ body {
   align-items: center;
   pointer-events: auto;
 }
-
 .lb-dot {
   width: 7px;
   height: 7px;
@@ -184,18 +191,13 @@ body {
   cursor: pointer;
   transition: background 0.2s ease;
 }
-
-.lb-dot.active {
-  background: rgba(255,255,255,0.95);
-}
+.lb-dot.active { background: rgba(255,255,255,0.95); }
 
 /* Touch behavior */
 html, body { touch-action: manipulation; }
-button, a, .tile, .lb-prev, .lb-next, .lb-close, .lb-dot {
-  touch-action: manipulation;
-}
+button, a, .tile, .lb-prev, .lb-next, .lb-close, .lb-dot { touch-action: manipulation; }
 
-/* Scroll lock when lightbox open */
+/* Strong scroll lock when lightbox is open */
 body.no-scroll, html.no-scroll {
   overflow: hidden !important;
   position: fixed !important;
@@ -203,21 +205,25 @@ body.no-scroll, html.no-scroll {
   height: 100%;
 }
 
-/* Fix for portrait orientation */
-.lightbox img.portrait {
-  width: 100%;
-  height: auto;
-  max-height: 92vh;
-  object-fit: contain;
-}
-
-/* Force Stussy Fit and Bro Grad Fit full width on mobile */
+/* Portrait images: fill width only on mobile */
 @media (max-width: 768px) {
-  .lb-rail img[src*="stussy-fit/"],
-  .lb-rail img[src*="bro-grad-fit/"] {
+  .lightbox img.portrait {
     width: 100%;
     height: auto;
-    max-height: 92vh;
+    max-height: none;
     object-fit: contain;
   }
 }
+
+/* Optional single-file tweak you kept earlier — safe to remove if not needed
+@media (max-width: 768px) {
+  .lb-rail img[src*="bro-grad-fit/1.jpg"] {
+    width: 100%;
+    height: auto;
+    max-height: 90vh;
+    object-fit: contain;
+    display: block;
+    margin: 0 auto;
+  }
+}
+*/
