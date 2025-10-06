@@ -193,13 +193,13 @@ body {
   background: rgba(255,255,255,0.95);
 }
 
-/* Mobile behavior */
+/* Mobile interaction */
 html, body { touch-action: manipulation; }
 button, a, .tile, .lb-prev, .lb-next, .lb-close, .lb-dot {
   touch-action: manipulation;
 }
 
-/* Freeze background when lightbox is open (mobile & desktop) */
+/* Freeze background when lightbox is open */
 body.no-scroll,
 html.no-scroll {
   overflow: hidden;
@@ -207,7 +207,17 @@ html.no-scroll {
   width: 100%;
 }
 
-/* Bro Grad Fit mobile adjustment (only that one image) */
+/* Portrait images: fill width only on mobile */
+@media (max-width: 768px) {
+  .lightbox img.portrait {
+    width: 100%;
+    height: auto;
+    max-height: none;
+    object-fit: contain;
+  }
+}
+
+/* Bro Grad Fit mobile adjustment */
 @media (max-width: 768px) {
   .lb-rail img[src*="bro-grad-fit/1.jpg"] {
     width: 100%;
