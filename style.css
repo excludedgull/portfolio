@@ -4,7 +4,6 @@
   --muted: #6b7280;
   --card: #f9fafb;
   --border: #e5e7eb;
-  --shadow: 0 1px 2px rgba(0,0,0,0.05), 0 4px 12px rgba(0,0,0,0.06);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -14,11 +13,10 @@
     --muted: #9ca3af;
     --card: #0f172a;
     --border: #1f2937;
-    --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 4px 12px rgba(0,0,0,0.35);
   }
 }
 
-/* Reset & base */
+/* Base */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; }
 body {
@@ -26,90 +24,58 @@ body {
   color: var(--text);
   font: 16px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, Apple Color Emoji, Segoe UI Emoji;
   line-height: 1.6;
-  overscroll-behavior: none; /* reduce pull-to-refresh */
-  image-orientation: from-image; /* respect EXIF rotation */
 }
 
 /* Layout */
 .container { width: min(980px, 92vw); margin: 0 auto; }
 .site-header { border-bottom: 1px solid var(--border); background: var(--bg); }
-.site-header .container { padding: 20px 0; }
+.site-header .container { padding: 16px 0; }
 
-.profile {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  gap: 6px;
-  text-align: center;
-}
-
-.username { font-size: 20px; margin-bottom: 4px; }
+.profile { text-align: center; }
+.username { font-size: 20px; }
 .bio { color: var(--muted); font-size: 15px; }
 
-/* Grid - always 3 columns */
+/* Grid: fixed 3 columns */
 .grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 4px;
-  margin: 14px 0 40px;
+  margin: 12px 0 28px;
 }
-
 .tile {
-  position: relative;
-  background: var(--card);
   aspect-ratio: 1 / 1;
+  border: 1px solid var(--border);
+  background: var(--card);
   overflow: hidden;
   cursor: pointer;
-  border: 1px solid var(--border);
 }
-
-/* Blur-up thumbs */
 .tile .thumb {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center center;
   display: block;
-  background-color: #000;
-  transition: filter .25s ease, transform .25s ease, opacity .25s ease;
 }
-.tile .thumb.loading {
-  filter: blur(8px);
-  transform: scale(1.02);
-  opacity: .6;
-}
-
-/* No hover overlays/captions */
-.tile:hover .thumb { transform: none; }
-.tile .overlay { display: none !important; }
 
 /* Footer */
 .site-footer {
   border-top: 1px solid var(--border);
-  padding: 16px 0;
+  padding: 14px 0;
   color: var(--muted);
   font-size: 14px;
   text-align: center;
 }
 
-/* Lightbox */
+/* Lightbox: very simple */
 .lightbox {
   position: fixed;
   inset: 0;
-  /* gradient + blur for subtle depth */
-  background:
-    radial-gradient(1200px 800px at 50% 30%, rgba(255,255,255,0.06), transparent 60%),
-    rgba(0,0,0,0.88);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  background: rgba(0,0,0,0.9);
   display: none;
-  place-items: center;
-  padding: 20px;
-  overscroll-behavior: none; /* stop browser pull-to-refresh inside */
-  touch-action: none;        /* JS handles gestures */
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
 }
-.lightbox.open { display: grid; }
+.lightbox.open { display: flex; }
 
 .lb-rail {
   position: relative;
@@ -119,19 +85,12 @@ body {
   place-items: center;
 }
 
-/* Lightbox image fade + bounds */
+/* Image */
 .lightbox img {
   max-width: min(92vw, 1400px);
   max-height: 86vh;
-  border-radius: 10px;
-  box-shadow: var(--shadow);
   background: #000;
-  transition: opacity .25s ease, filter .25s ease;
-  opacity: 1;
-}
-.lightbox img.loading {
-  opacity: .2;
-  filter: blur(6px);
+  border-radius: 8px;
 }
 
 /* Controls */
@@ -139,7 +98,6 @@ body {
 .lb-prev,
 .lb-next {
   position: absolute;
-  top: 16px;
   background: rgba(255,255,255,0.12);
   color: #fff;
   border: none;
@@ -150,11 +108,8 @@ body {
   cursor: pointer;
   display: grid;
   place-items: center;
-  z-index: 1000;
-  pointer-events: auto;
-  padding: 6px; /* larger touch target without visual change */
 }
-.lb-close { right: 16px; }
+.lb-close { top: 16px; right: 16px; }
 .lb-prev, .lb-next { top: 50%; transform: translateY(-50%); }
 .lb-prev { left: 16px; }
 .lb-next { right: 16px; }
@@ -166,70 +121,23 @@ body {
   pointer-events: none;
 }
 
-/* Hide captions */
-#lightbox .lb-caption { display: none !important; }
-
 /* Dots */
 .lb-dots {
   position: absolute;
-  bottom: 22px;
+  bottom: 18px;
   left: 0;
   right: 0;
   display: flex;
   gap: 6px;
   justify-content: center;
   align-items: center;
-  pointer-events: auto;
 }
 .lb-dot {
   width: 7px;
   height: 7px;
-  min-width: 7px;
-  min-height: 7px;
   border-radius: 50%;
   border: none;
   background: rgba(255,255,255,0.35);
   cursor: pointer;
-  transition: background 0.2s ease;
 }
 .lb-dot.active { background: rgba(255,255,255,0.95); }
-
-/* Touch behavior */
-html, body { touch-action: manipulation; }
-button, a, .tile, .lb-prev, .lb-next, .lb-close, .lb-dot { touch-action: manipulation; }
-
-/* Strong scroll lock when lightbox is open */
-body.no-scroll, html.no-scroll {
-  overflow: hidden !important;
-  position: fixed !important;
-  width: 100%;
-  height: 100%;
-}
-
-/* Portrait images: fill width only on mobile */
-@media (max-width: 768px) {
-  .lightbox img.portrait {
-    width: 100%;
-    height: auto;
-    max-height: none;
-    object-fit: contain;
-  }
-}
-
-/* Respect reduced motion */
-@media (prefers-reduced-motion: reduce) {
-  * { transition: none !important; animation: none !important; }
-}
-
-/* Optional single-file tweak kept earlier — safe to remove if not needed
-@media (max-width: 768px) {
-  .lb-rail img[src*="bro-grad-fit/1.jpg"] {
-    width: 100%;
-    height: auto;
-    max-height: 90vh;
-    object-fit: contain;
-    display: block;
-    margin: 0 auto;
-  }
-}
-*/
