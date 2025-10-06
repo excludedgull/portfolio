@@ -211,3 +211,13 @@ html, body { touch-action: manipulation; }
 button, a, .tile, .lb-prev, .lb-next, .lb-close, .lb-dot {
   touch-action: manipulation;
 }
+
+/* Fix Bro Grad Fit first image size on mobile */
+@media (max-width: 768px) {
+  .lb-rail img[src*="bro-grad-fit/1.jpg"] {
+    width: 100%;
+    height: auto;
+    max-height: 85vh;
+    object-fit: contain;
+  }
+}
