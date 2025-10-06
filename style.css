@@ -152,6 +152,7 @@ body {
   place-items: center;
   z-index: 1000;
   pointer-events: auto;
+  padding: 6px; /* larger touch target without visual change */
 }
 .lb-close { right: 16px; }
 .lb-prev, .lb-next { top: 50%; transform: translateY(-50%); }
@@ -215,7 +216,12 @@ body.no-scroll, html.no-scroll {
   }
 }
 
-/* Optional single-file tweak you kept earlier — safe to remove if not needed
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+
+/* Optional single-file tweak kept earlier — safe to remove if not needed
 @media (max-width: 768px) {
   .lb-rail img[src*="bro-grad-fit/1.jpg"] {
     width: 100%;
