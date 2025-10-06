@@ -234,7 +234,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (refs.year) refs.year.textContent = new Date().getFullYear();
 
   // Capture tiles in DOM order — newest -> oldest
-  state.tiles = refs.grid ? Array.from(refs.grid.querySelectorAll('.tile')) : [];
+  state.tiles = refs.grid ? Array.from(refs.grid.querySelectorAll('.tile')).reverse() : [];
 
   // Blur-up for grid thumbs
   document.querySelectorAll('.thumb.loading').forEach(img => {
