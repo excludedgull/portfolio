@@ -138,29 +138,47 @@ document.addEventListener('DOMContentLoaded', () => {
   const prev = () => { if (currentIndex > 0) goTo(currentIndex - 1); };
   const next = () => { if (currentIndex < albumImages.length - 1) goTo(currentIndex + 1); };
 
-  // Visual order helpers: navigate by on-screen position, not DOM index
+  // ------- Visual order & column-aware vertical navigation -------
+
+  // Only include currently VISIBLE tiles (infinite reveal hides others)
+  const visibleTiles = () => tiles.filter(t => t.offsetParent !== null);
+
+  // Row-major visual order: top->bottom, then left->right
   const visualTiles = () => {
-    const arr = tiles.slice();
+    const arr = visibleTiles().slice();
     arr.sort((a, b) => {
       const ra = a.getBoundingClientRect();
       const rb = b.getBoundingClientRect();
-      if (ra.top !== rb.top) return ra.top - rb.top;
+      if (Math.abs(ra.top - rb.top) > 2) return ra.top - rb.top; // tolerate tiny float diffs
       return ra.left - rb.left;
     });
     return arr;
   };
 
-  function openAdjacentAlbum(offset) {
+  // Read actual grid column count from CSS
+  const getColumnCount = () => {
+    try {
+      const cols = getComputedStyle(grid).gridTemplateColumns;
+      if (!cols) return 3;
+      return cols.split(' ').length || 3;
+    } catch { return 3; }
+  };
+
+  function openAdjacentRow(dir /* -1 up, +1 down */) {
     if (!openerTile) return;
     const vt = visualTiles();
     const idx = vt.indexOf(openerTile);
     if (idx < 0) return;
-    const target = vt[idx + offset];
+    const cols = getColumnCount();
+    const target = vt[idx + dir * cols];
     if (!target) return;
     openAlbum(target, 0);
   }
-  const openPrevAlbum = () => openAdjacentAlbum(-1); // go to album above on screen (previous/newer)
-  const openNextAlbum = () => openAdjacentAlbum(+1); // go to album below on screen (next/older)
+
+  const openPrevAlbum = () => openAdjacentRow(-1); // album ABOVE on screen (previous/newer)
+  const openNextAlbum = () => openAdjacentRow(+1); // album BELOW on screen (next/older)
+
+  // ---------------------------------------------------------------
 
   function openAlbum(tile, startIndex = 0, focusTrap = true) {
     openerTile = tile;
@@ -238,13 +256,13 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       // Vertical swipe: down = album below (next/older), up = album above (previous/newer)
       if (absY > 140 && absY > absX * 2) {
-        if (dy < 0) openPrevAlbum();  // swipe up
-        else openNextAlbum();         // swipe down
+        if (dy < 0) openPrevAlbum();  // swipe up -> previous/newer (above)
+        else openNextAlbum();         // swipe down -> next/older (below)
       }
     }, { passive: true });
   }
 
-  // Keyboard: Left prev photo, Right next photo, Up previous album, Down next album
+  // Keyboard: Left prev photo, Right next photo, Up previous album (above), Down next album (below)
   document.addEventListener('keydown', (e) => {
     if (!lb.classList.contains('open')) {
       if ((e.key === 'Enter' || e.key === ' ') && document.activeElement?.classList?.contains('tile')) {
