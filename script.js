@@ -114,9 +114,19 @@ function parseHashAndOpenIfAny() {
   const album = params.get('album');
   const idxStr = params.get('index');
   if (!album) return;
+
   const tile = state.tiles.find(t => (t.dataset.album || t.getAttribute('data-album') || '') === album);
   if (!tile) return;
-  openAlbum(tile, Number(idxStr ?? 0) || 0, false);
+
+  let idx = Number(idxStr);
+  if (!Number.isFinite(idx) || idx < 0) idx = 0;
+
+  // peek images to clamp safely
+  let imgs = [];
+  try { imgs = JSON.parse(tile.getAttribute('data-images') || '[]'); } catch {}
+  idx = Math.min(idx, Math.max(0, imgs.length - 1));
+
+  openAlbum(tile, idx, false);
 }
 function preloadNeighbor(i) {
   const path = state.albumImages[i];
@@ -135,9 +145,11 @@ function updateUI() {
     refs.lbImg.alt = 'Image failed to load.';
     refs.lbImg.classList.remove('portrait', 'loading');
   };
+
+  // do not set fake srcset/sizes
+  refs.lbImg.removeAttribute('srcset');
+  refs.lbImg.removeAttribute('sizes');
   refs.lbImg.setAttribute('src', imgPath);
-  refs.lbImg.setAttribute('srcset', `${imgPath} 2048w`);
-  refs.lbImg.setAttribute('sizes', '92vw');
   refs.lbImg.alt = '';
 
   const onLoaded = () => {
@@ -209,7 +221,8 @@ function closeLB() {
   refs.lbImg.removeAttribute('src');
   refs.lbImg.removeAttribute('srcset');
   unlockScroll();
-  history.replaceState(null, '', ' ');
+  // clear only the hash, keep path and search intact
+  history.replaceState(null, '', location.pathname + location.search);
   state.openerTile?.focus?.();
   state.openerTile = null;
 }
@@ -306,6 +319,11 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       return;
     }
+
+    // stop page scroll on arrow keys while lightbox is open
+    const arrowKeys = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
+    if (arrowKeys.includes(e.key)) e.preventDefault();
+
     if (e.key === 'Escape') closeLB();
     if (e.key === 'ArrowLeft') prevPhoto();
     if (e.key === 'ArrowRight') nextPhoto();
