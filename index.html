@@ -10,20 +10,20 @@
 </head>
 <body>
   <header class="site-header" role="banner">
-  <div class="container">
-    <div class="profile">
-      <div class="meta">
-        <h1 class="username">Thomas Signorello Jr</h1>
-        <p class="bio">A Portfolio - NJ - Rutgers New Brunswick</p>
+    <div class="container">
+      <div class="profile">
+        <div class="meta">
+          <h1 class="username">Thomas Signorello Jr</h1>
+          <p class="bio">A Portfolio - NJ - Rutgers New Brunswick</p>
+        </div>
       </div>
     </div>
-  </div>
-</header>
+  </header>
 
   <main class="container" id="content" role="main">
     <section class="grid" id="grid" aria-label="Album grid">
 
-                  <!-- Wildwood Fit -->
+      <!-- Wildwood Fit -->
       <article class="tile" tabindex="0"
         data-album="Wildwood Fit"
         data-category="portraits"
@@ -45,7 +45,7 @@
           style="object-position: 60% center;" />
       </article>
 
-            <!-- Stussy Fit -->
+      <!-- Stussy Fit -->
       <article class="tile" tabindex="0"
         data-album="Stussy Fit"
         data-category="portraits"
@@ -65,7 +65,7 @@
           class="thumb" loading="lazy"
           style="object-position: 40% center;" />
       </article>
-      
+
       <!-- Aaliyah Fit -->
       <article class="tile" tabindex="0"
         data-album="Aaliyah Fit"
@@ -85,25 +85,25 @@
           alt="Aaliyah Fit cover"
           class="thumb" loading="lazy" />
       </article>
-      
+
       <!-- Bro Grad Fit -->
-<article class="tile" tabindex="0"
-  data-album="Bro Grad Fit"
-  data-category="portraits"
-  data-images='[
-    "assets/images/bro-grad-fit/1.jpg?fit=portrait",
-    "assets/images/bro-grad-fit/2.jpg",
-    "assets/images/bro-grad-fit/3.jpg"
-  ]'
-  data-cover="assets/images/bro-grad-fit/cover.jpg">
-  <img
-    src="assets/images/bro-grad-fit/cover.jpg"
-    srcset="assets/images/bro-grad-fit/cover.jpg 640w, assets/images/bro-grad-fit/cover.jpg 2048w"
-    sizes="(max-width: 600px) 100vw, (max-width: 900px) 50vw, 33vw"
-    alt="Bro Grad Fit cover"
-    class="thumb"
-    loading="lazy" />
-</article>
+      <article class="tile" tabindex="0"
+        data-album="Bro Grad Fit"
+        data-category="portraits"
+        data-images='[
+          "assets/images/bro-grad-fit/1.jpg",
+          "assets/images/bro-grad-fit/2.jpg",
+          "assets/images/bro-grad-fit/3.jpg"
+        ]'
+        data-cover="assets/images/bro-grad-fit/cover.jpg">
+        <img
+          src="assets/images/bro-grad-fit/cover.jpg"
+          srcset="assets/images/bro-grad-fit/cover.jpg 640w, assets/images/bro-grad-fit/cover.jpg 2048w"
+          sizes="(max-width: 600px) 100vw, (max-width: 900px) 50vw, 33vw"
+          alt="Bro Grad Fit cover"
+          class="thumb"
+          loading="lazy" />
+      </article>
 
       <!-- Mechanic Shoot -->
       <article class="tile" tabindex="0"
@@ -188,19 +188,14 @@
   </footer>
 
   <div id="lightbox" class="lightbox" aria-hidden="true" role="dialog" aria-label="Album viewer">
-  <button class="lb-close" id="lbClose" aria-label="Close">×</button>
-  <div class="lb-rail">
-    <button class="lb-prev" id="lbPrev" aria-label="Previous">‹</button>
-    <img id="lbImg" alt="" />
-    <button class="lb-next" id="lbNext" aria-label="Next">›</button>
+    <button class="lb-close" id="lbClose" aria-label="Close">×</button>
+    <div class="lb-rail">
+      <button class="lb-prev" id="lbPrev" aria-label="Previous">‹</button>
+      <img id="lbImg" alt="" />
+      <button class="lb-next" id="lbNext" aria-label="Next">›</button>
+    </div>
+    <div class="lb-dots" id="lbDots" aria-hidden="true"></div>
   </div>
-  <div class="lb-dots" id="lbDots" aria-hidden="true"></div>
-  <div class="lb-caption">
-    <div id="lbAlbum"></div>
-    <div id="lbIndex"></div>
-  </div>
-</div>
-
 
   <script src="script.js" defer></script>
 </body>
